@@ -101,6 +101,22 @@ telegram.on("text", (msg) => {
             });
         });
 
+    } else {
+        getToken().then((token) => {
+            searchSong(msg, token).then((result) => {
+                console.log("res: ");
+                console.log(result);
+                if (result.meta.status == 200) {
+                    var response = "";
+                    var hits = result.response.hits;
+                    for (let i = 0; i < hits.length; i++) {
+                        const element = hits[i];
+                        response += i + 1 + ". " + element.result.full_title + "  " + "/dl_" + element.result.id + "\n\n";
+                    }
+                    telegram.sendMessage(chatId, response);
+                }
+            });
+        });
     }
 });
 
@@ -128,6 +144,7 @@ async function searchSong(title, token) {
     }
 }
 
+/*
 async function getlyrics(id, token) {
     try {
         const response = await axios.get('https://api.genius.com/songs/' + id, { headers: { Authorization: "Bearer " + token } });
@@ -146,6 +163,28 @@ async function getlyrics(id, token) {
 
         return lyrics;
 
+
+    } catch (error) {
+        console.error(error);
+    }
+}
+*/
+
+async function getlyrics(id, token) {
+    try {
+        var response = await axios.get('https://api.genius.com/songs/' + id, { headers: { Authorization: "Bearer " + token } });
+        var title = response.data.response.song.title;
+        var artist = response.data.response.song.primary_artist.name;
+
+        options.title = title;
+        options.artist = artist;
+        options.apiKey = token;
+
+        response = await axios.get(`https://orion.apiseeds.com/api/music/lyric/${artist}/${title}?apikey=VN1cJGbNOBz5iX4ooym3SpaD5gf8dSn7ri8OvGNb6jvOrNkRFhSZ6GFu6OTRdqQ5`);
+        console.log(response);
+        var lyrics = response.data.result.track.text;
+
+        return lyrics;
 
     } catch (error) {
         console.error(error);
