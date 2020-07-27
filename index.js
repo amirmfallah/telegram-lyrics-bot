@@ -7,7 +7,7 @@ var getLyrics = genius.getLyrics;
 
 
 const options = {
-    apiKey: 'Pvx5cKguUCoD0bRRX7Z-bYJFD59YQmw6DfjQpj3ZeWNaMtbX3u9csBzruwFI80eg',
+    apiKey: '',
     title: '',
     artist: 'adele',
     optimizeQuery: true
@@ -31,23 +31,72 @@ const { ClientCredentials, ResourceOwnerPassword, AuthorizationCode } = require(
 https: //api.genius.com/oauth/authorize?client_id=b7LlBrvWvXp4wAjl3L8ZVPwkGPEFZQC2X9Ug8gCaQdVHPO51PpEuzviUtllcVnU2&redirect_uri=/&scope=me&state=200&response_type=code
 */
 
-telegram.on("text", (message) => {
-    getToken().then((token) => {
+telegram.on("inline_query", (message) => {
 
+    console.log(message.query.toString());
 
-    });
     /*
-    getLyrics(options).then((lyrics) => {
-        options.title = message.text.toString();
+                getToken().then((token) => {
+                    options.apiKey = token;
 
-        console.log(lyrics)
-        telegram.sendMessage(message.chat.id, lyrics);
+                });
+    
+                getLyrics(options).then((lyrics) => {
+                    options.title = message.text.toString();
 
-    }).catch((e) => {
-        console.log(e);
-    });
-    */
+                    console.log(lyrics)
+                    telegram.sendMessage(message.chat.id, lyrics);
+
+                }).catch((e) => {
+                    console.log(e);
+                });
+                */
 });
+
+
+
+telegram.on("text", (msg) => {
+    // 'msg' is the received Message from Telegram
+    // 'match' is the result of executing the regexp above on the text content
+    // of the message   
+    const chatId = msg.chat.id;
+    msg = msg.text.toString();
+
+    if (msg.search("/search") != -1) {
+        var res = msg.match(/\/search (.+)/);
+        console.log(res);
+        getToken().then((token) => {
+            searchSong(res[1], token).then((result) => {
+                console.log("res: ");
+                console.log(result);
+                if (result.meta.status == 200) {
+                    var response = "";
+                    var hits = result.response.hits;
+                    for (let i = 0; i < hits.length; i++) {
+                        const element = hits[i];
+                        response += element.result.full_title + "  " + "/dl_" + element.result.id + "\n";
+                    }
+                    telegram.sendMessage(chatId, response);
+                }
+            })
+        })
+
+
+
+
+    } else if (msg.search("/dl_") != -1) {
+        var res = msg.match(/\/dl_ (.+)/);
+        console.log(res);
+    }
+
+    //
+    //var a = match[1];
+
+    // send back the matched "whatever" to the chat
+    //telegram.sendMessage(chatId, res[1]);
+});
+
+
 
 async function getToken() {
     const client = new ClientCredentials(config);
@@ -62,6 +111,12 @@ async function getToken() {
     }
 }
 
-async function searchSong(title) {
+async function searchSong(title, token) {
+    try {
+        const response = await axios.get('https://api.genius.com/search?q=' + title, { headers: { Authorization: "Bearer " + token } });
+        return response.data;
+    } catch (error) {
+        console.error(error);
+    }
 
 }
