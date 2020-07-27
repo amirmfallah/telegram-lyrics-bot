@@ -20,6 +20,7 @@
     "axios": "^0.19.2",
     "genius-api": "^0.4.1",
     "genius-lyrics-api": "^3.0.2",
+    "lyricist": "^2.2.2",
     "node-telegram-bot-api": "^0.50.0",
     "nodemon": "^2.0.4",
     "simple-oauth2": "^4.1.0"

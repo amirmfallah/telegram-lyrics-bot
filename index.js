@@ -3,6 +3,7 @@ var telegram = new TelegramBot("1327805449:AAGeNbr6dUA6WRIP6qNKBBrE0jsD6RKbqQk",
 const axios = require('axios');
 var genius = require('genius-lyrics-api');
 var getLyrics = genius.getLyrics;
+const Lyricist = require('lyricist/node6');
 
 
 
@@ -78,22 +79,29 @@ telegram.on("text", (msg) => {
                     }
                     telegram.sendMessage(chatId, response);
                 }
-            })
-        })
-
-
-
+            });
+        });
 
     } else if (msg.search("/dl_") != -1) {
-        var res = msg.match(/\/dl_ (.+)/);
+        var res = msg.match(/\/dl_(.+)/);
         console.log(res);
+        getToken().then((token) => {
+            console.log("got: " + token);
+            getlyrics(res[1], token).then((lyrics) => {
+
+                if (lyrics) {
+                    telegram.sendMessage(chatId, lyrics)
+                } else {
+                    telegram.sendMessage(chatId, "lyrics not found.")
+
+                }
+
+            }).catch((e) => {
+                console.log(e);
+            });
+        });
+
     }
-
-    //
-    //var a = match[1];
-
-    // send back the matched "whatever" to the chat
-    //telegram.sendMessage(chatId, res[1]);
 });
 
 
@@ -118,5 +126,28 @@ async function searchSong(title, token) {
     } catch (error) {
         console.error(error);
     }
+}
 
+async function getlyrics(id, token) {
+    try {
+        const response = await axios.get('https://api.genius.com/songs/' + id, { headers: { Authorization: "Bearer " + token } });
+        var title = response.data.response.song.title;
+        var artist = response.data.response.song.primary_artist.name;
+
+        options.title = title;
+        options.artist = artist;
+        options.apiKey = token;
+
+        console.log(options);
+
+        var lyrics = await getLyrics(options);
+        console.log(lyrics);
+
+
+        return lyrics;
+
+
+    } catch (error) {
+        console.error(error);
+    }
 }
